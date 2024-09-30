@@ -1,7 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { AuthGuard } from 'src/auth/guard/auth.guard';
+import { UserSerializer } from './UserSerializer';
 
 @Controller('user')
 export class UserController {
@@ -9,7 +21,17 @@ export class UserController {
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+    // return this.userService.create(createUserDto);
+    return 'this.userService.create(createUserDto)';
+  }
+
+  // GET USER INFORMATION
+  @UseGuards(AuthGuard)
+  @Get('/profile')
+  async getProfile(@Request() req: any) {
+    return UserSerializer.serialize(
+      await this.userService.findUserEmail(req.user.email),
+    );
   }
 
   @Get()
