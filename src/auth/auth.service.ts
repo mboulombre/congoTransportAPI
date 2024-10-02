@@ -2,8 +2,10 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { hash, compare } from 'bcrypt';
+import { hash, compare, genSalt } from 'bcrypt';
+// import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 
 import { CreateAuthDto } from './dto/create-auth.dto';
@@ -17,7 +19,30 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(authBody: CreateAuthDto) {
+  // FUNCTION TO ENCRYPT PASSWORD
+  private async hashPassword({ password }: { password: string }) {
+    const salt = await genSalt(10);
+    const hashedPassword = await hash(password, salt);
+
+    return hashedPassword;
+  }
+
+  // FUNCTION TO COMPARE PASSWORD
+  private async isPasswordValid({
+    password,
+    hashedPassword,
+  }: {
+    password: string;
+    hashedPassword: string;
+  }) {
+    // const isPasswordValid = await bcrypt.compare(password, hashedPassword);
+    const isPasswordValid = await compare(password, hashedPassword);
+
+    return isPasswordValid;
+  }
+  // $2b$10$2Q6K9DXFCUL1XdESecHO2OLUmLUlgUPj64YImk
+  // FUNCTION REGISTER USER
+  async register(authBody: CreateAuthDto): Promise<{ token: string }> {
     const {
       email,
       adress1,
@@ -37,7 +62,6 @@ export class AuthService {
     const isPhone2 = await this.usersService.findUserPhone2(tel2);
     // IF EMAIL IS USED
     if (isEmail) {
-      console.log('IS EMAIL -------', isEmail);
       throw new BadRequestException(
         'CET EMAIL EST DEJA UTILISE VEILLEZ EN ENTRER UN AUTRE',
       );
@@ -45,21 +69,20 @@ export class AuthService {
 
     // IF PHONE 1 IS USED
     if (isPhone1) {
-      console.log('IS EMAIL -------', isPhone1);
       throw new BadRequestException(
         'CE NUMERO DE TEL 1 EST DEJA UTILISE VEILLEZ EN ENTRER UN AUTRE',
       );
     }
     // IF PHONE 2 IS USED
     if (isPhone2) {
-      console.log('IS EMAIL -------', isPhone2);
       throw new BadRequestException(
         'CE NUMERO DE TEL 2 EST DEJA UTILISE VEILLEZ EN ENTRER UN AUTRE',
       );
     }
 
     // // HASH PASSWORD
-    const hashedPassword = await hash(password, 10);
+    const hashedPassword = await this.hashPassword({ password });
+    console.log('hashedPassword', hashedPassword);
 
     // CREATE A NEW USER AND SAVE IT
     const user = await this.usersService.createUser({
@@ -80,25 +103,28 @@ export class AuthService {
     return { token };
   }
 
+  // FUNCTION LOGIN USER
   async signin(
     email: string,
     password: string,
   ): Promise<{ access_token: string }> {
     const user = await this.usersService.findUserEmail(email);
 
-    const checkPassword = await compare(password, user.password);
-
+    // IF CHAMPS EMPTY
+    if (!email || !password) {
+      throw new NotFoundException('LES CHAMPS SONT OBLIGATOIRES');
+    }
     // IF USER NOT FOUND
     if (!user) {
       throw new NotFoundException('UTILISATEUR NON TROUVER');
     }
+    const isPasswordValid = await compare(password, user.password);
+    console.log('USER PASSWORD =======', user.password);
+    console.log('PASSWORD =======', password);
+    console.log('IS PASSWORD VALID ------ ', isPasswordValid);
     // IF PASSWORD INCORRECT
-    if (checkPassword) {
+    if (!isPasswordValid) {
       throw new NotFoundException('LE PASSWORD EST INCORRECT');
-    }
-    // IF CHAMPS EMPTY
-    if (!email || !password) {
-      throw new NotFoundException('LES CHAMPS SONT OBLIGATOIRES');
     }
 
     const payload = { sub: user.idUser, email: user.email };
@@ -108,23 +134,42 @@ export class AuthService {
     };
   }
 
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
-  }
+  // FUNCTION CHANGE PASSWORD
+  async changePassword(
+    email: string,
+    oldPassword: string,
+    newPassword: string,
+  ) {
+    // VERIFY IF CHAMP IS EMPTY
+    if (!email || !oldPassword || !newPassword) {
+      throw new NotFoundException('CHAMPS REQUIRED...');
+    }
+    // FIND THE USER
+    const user = await this.usersService.findUserEmail(email);
+    // Log pour voir si la comparaison réussit
+    if (!user) {
+      throw new NotFoundException('USER NOT FOUND...');
+    }
 
-  findAll() {
-    return `This action returns all auth`;
-  }
+    // COMPARE THE OLD PASSWORD WITH THE PASSWORD IN DB
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
+    const passwordMatch = await this.isPasswordValid({
+      password: oldPassword,
+      hashedPassword: user.password,
+    });
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
+    if (!passwordMatch) {
+      throw new UnauthorizedException('Wrong credentials');
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+    // CHANGE USER'S PASSWORD (DON'T FORGET TO HASH IT!!)
+    const newHasedPassword = await this.hashPassword({ password: newPassword });
+    user.password = newHasedPassword;
+    // SAVE UPDATE PASSWORD
+    this.usersService.changePassword(user.idUser, user);
+
+    return {
+      message: 'PASSWORD CHANGED WITH SUCCESSFULY...',
+    };
   }
 }

@@ -24,7 +24,7 @@ export class User {
   @Column('varchar', { name: 'Email', unique: true, length: 45 })
   email: string;
 
-  @Column('varchar', { name: 'Password', length: 45 })
+  @Column('varchar', { name: 'Password', length: 225 })
   password: string;
 
   @Column('varchar', { name: 'Adress1', length: 45 })

@@ -12,12 +12,18 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
   ) {}
+  // CREATE USER FUNCTION
+
   async createUser(createUserDto: CreateAuthDto) {
-    // create(createUserDto: CreateUserDto) {
     return await this.userRepo.save(createUserDto);
-    // return 'This action adds a new user';
   }
 
+  // CHANGE PASSWORD FUNCTION
+  async changePassword(id: number, user: CreateAuthDto) {
+    return await this.userRepo.update(id, user);
+  }
+
+  // GET ALL USER FUNCTION
   async findAll() {
     try {
       let getAllUsers = await this.userRepo.find();
@@ -29,11 +35,11 @@ export class UserService {
   }
 
   // GET ONE BY ID
-  findOne(id: number) {
+  async findOneById(id: number) {
     if (!id) {
       return `This action returns a #${id} user`;
     }
-    return this.userRepo.findOne({ where: { idUser: id } });
+    return await this.userRepo.findOne({ where: { idUser: id } });
   }
   // GET USER EMAIL EXISTING
   findUserEmail(email: string) {
