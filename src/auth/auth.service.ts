@@ -21,8 +21,7 @@ export class AuthService {
 
   // FUNCTION TO ENCRYPT PASSWORD
   private async hashPassword({ password }: { password: string }) {
-    const salt = await genSalt(10);
-    const hashedPassword = await hash(password, salt);
+    const hashedPassword = await hash(password, 10);
 
     return hashedPassword;
   }
@@ -35,12 +34,11 @@ export class AuthService {
     password: string;
     hashedPassword: string;
   }) {
-    // const isPasswordValid = await bcrypt.compare(password, hashedPassword);
     const isPasswordValid = await compare(password, hashedPassword);
 
     return isPasswordValid;
   }
-  // $2b$10$2Q6K9DXFCUL1XdESecHO2OLUmLUlgUPj64YImk
+
   // FUNCTION REGISTER USER
   async register(authBody: CreateAuthDto): Promise<{ token: string }> {
     const {
@@ -82,7 +80,6 @@ export class AuthService {
 
     // // HASH PASSWORD
     const hashedPassword = await this.hashPassword({ password });
-    console.log('hashedPassword', hashedPassword);
 
     // CREATE A NEW USER AND SAVE IT
     const user = await this.usersService.createUser({
@@ -119,9 +116,7 @@ export class AuthService {
       throw new NotFoundException('UTILISATEUR NON TROUVER');
     }
     const isPasswordValid = await compare(password, user.password);
-    console.log('USER PASSWORD =======', user.password);
-    console.log('PASSWORD =======', password);
-    console.log('IS PASSWORD VALID ------ ', isPasswordValid);
+
     // IF PASSWORD INCORRECT
     if (!isPasswordValid) {
       throw new NotFoundException('LE PASSWORD EST INCORRECT');
