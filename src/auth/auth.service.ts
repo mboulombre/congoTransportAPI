@@ -14,6 +14,7 @@ import { UpdateAuthDto } from './dto/update-auth.dto';
 import { UserService } from 'src/user/user.service';
 import { VerificationService } from 'src/verification/verification.service';
 import { MessageService } from 'src/message/message.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -172,10 +173,9 @@ export class AuthService {
       message: 'PASSWORD CHANGED WITH SUCCESSFULY...',
     };
   }
-
+  // GENERATE EMAIL AND SEND TO EMAIL ACCOUNT
   async generateEmailVerification(email: string) {
     const user = await this.usersService.findUserEmail(email);
-    console.log('user.eamil', email);
     if (!user) {
       throw new NotFoundException('USER NOT FOUND');
     }
@@ -190,7 +190,7 @@ export class AuthService {
       html: `<p>Hi${user.lastName ? ' ' + user.firstName : ''},</p><p>You may verify your MyApp account using the following OTP: <br /><span style="font-size:24px; font-weight: 700;">${otp}</span></p><p>Regards,<br />MyApp</p>`,
     });
   }
-
+  // VERIFY OTP CODE
   async verifyEmail(email: string, token: string, password: string) {
     const user = await this.usersService.findUserEmail(email);
 
@@ -213,5 +213,40 @@ export class AuthService {
     const userRepo = this.usersService.createUser(user);
 
     return userRepo;
+  }
+
+  // FUNCTION RESET PASSWORD
+  async resetPassword(resetPasswordDto: ChangePasswordDto) {
+    const { email, newPassword, oldPassword } = resetPasswordDto;
+    // VERIFY IF CHAMP IS EMPTY
+    if (!email || !oldPassword || !newPassword) {
+      throw new NotFoundException('CHAMPS REQUIRED...');
+    }
+
+    // FIND THE USER
+    const user = await this.usersService.findUserEmail(email);
+    if (!user) {
+      throw new NotFoundException('USER NOT FOUND...');
+    }
+
+    // COMPARE THE OLD PASSWORD WITH THE PASSWORD IN DB
+    const passwordMatch = await this.isPasswordValid({
+      password: oldPassword,
+      hashedPassword: user.password,
+    });
+
+    if (!passwordMatch) {
+      throw new UnauthorizedException('WRONG CREDENTIALS');
+    }
+
+    // RESET USER PASSWORD
+    user.password = await this.hashPassword({ password: newPassword });
+
+    // RESET PASSWORD
+    this.usersService.changePassword(user.idUser, user);
+
+    return {
+      message: 'PASSWORD RESET WITH SUCCESSFULY...',
+    };
   }
 }

@@ -48,8 +48,6 @@ export class AuthController {
   @Post('verify-otp')
   async generateEmailVerification(@Body() body: { email: string }) {
     return await this.authService.generateEmailVerification(body.email);
-
-    // return { status: 'success', message: 'SENDING EMAIL IN A MOMENT...' };
   }
 
   @Post('verify/:otp')
@@ -64,5 +62,11 @@ export class AuthController {
     );
 
     return { status: result ? 'success' : 'Failure', message: null };
+  }
+
+  @UseGuards(AuthGuard)
+  @Put('/reset-password')
+  async resetPassword(@Body() resetPasswordDto: ChangePasswordDto) {
+    return this.authService.resetPassword(resetPasswordDto);
   }
 }
