@@ -8,6 +8,10 @@ import { DatabaseModule } from './database/database.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { jwtConstants } from './auth/constants/secret';
+import { VerificationService } from './verification/verification.service';
+import { VerificationModule } from './verification/verification.module';
+import { MessageService } from './message/message.service';
+import { MessageModule } from './message/message.module';
 
 @Module({
   imports: [
@@ -23,6 +27,8 @@ import { jwtConstants } from './auth/constants/secret';
     DatabaseModule,
     UserModule,
     AuthModule,
+    VerificationModule,
+    MessageModule,
   ],
 
   controllers: [AppController],

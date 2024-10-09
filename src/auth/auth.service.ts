@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { hash, compare, genSalt } from 'bcrypt';
 // import * as bcrypt from 'bcrypt';
@@ -11,12 +12,16 @@ import { JwtService } from '@nestjs/jwt';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { UserService } from 'src/user/user.service';
+import { VerificationService } from 'src/verification/verification.service';
+import { MessageService } from 'src/message/message.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UserService,
     private jwtService: JwtService,
+    private verificationTokenService: VerificationService,
+    private emailService: MessageService,
   ) {}
 
   // FUNCTION TO ENCRYPT PASSWORD
@@ -166,5 +171,47 @@ export class AuthService {
     return {
       message: 'PASSWORD CHANGED WITH SUCCESSFULY...',
     };
+  }
+
+  async generateEmailVerification(email: string) {
+    const user = await this.usersService.findUserEmail(email);
+    console.log('user.eamil', email);
+    if (!user) {
+      throw new NotFoundException('USER NOT FOUND');
+    }
+
+    const otp = await this.verificationTokenService.generateOTP(user.idUser);
+
+    return this.emailService.sendEmail({
+      subject: 'MY APP - ACCOUNT VERIFICATION',
+      recipients: [
+        { name: user.lastName + ' ' + user.firstName, address: user.email },
+      ],
+      html: `<p>Hi${user.lastName ? ' ' + user.firstName : ''},</p><p>You may verify your MyApp account using the following OTP: <br /><span style="font-size:24px; font-weight: 700;">${otp}</span></p><p>Regards,<br />MyApp</p>`,
+    });
+  }
+
+  async verifyEmail(email: string, token: string, password: string) {
+    const user = await this.usersService.findUserEmail(email);
+
+    if (!user) {
+      throw new NotFoundException('USER NOT FOUND');
+    }
+    console.log('user', user);
+    console.log('token', token);
+    const isValid = await this.verificationTokenService.validateOtp(
+      user.idUser,
+      token,
+    );
+
+    if (!isValid) {
+      throw new UnprocessableEntityException('INVALID OR EXPIRED OTP');
+    }
+
+    user.password = await this.hashPassword({ password });
+
+    const userRepo = this.usersService.createUser(user);
+
+    return userRepo;
   }
 }

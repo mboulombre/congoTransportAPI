@@ -14,6 +14,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { UserSerializer } from './UserSerializer';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { User } from './entities/user.entity';
 
 @Controller('user')
 export class UserController {
@@ -28,6 +30,9 @@ export class UserController {
   // GET USER INFORMATION
   @UseGuards(AuthGuard)
   @Get('/profile')
+  // async getProfile(@CurrentUser() user: User) {
+  //   return user;
+  // }
   async getProfile(@Request() req: any) {
     return UserSerializer.serialize(
       await this.userService.findUserEmail(req.user.email),

@@ -44,4 +44,25 @@ export class AuthController {
       changePasswordDto.newPassword,
     );
   }
+
+  @Post('verify-otp')
+  async generateEmailVerification(@Body() body: { email: string }) {
+    return await this.authService.generateEmailVerification(body.email);
+
+    // return { status: 'success', message: 'SENDING EMAIL IN A MOMENT...' };
+  }
+
+  @Post('verify/:otp')
+  async verifyEmail(
+    @Param('otp') otp: string,
+    @Body() body: { email: string; password: string },
+  ) {
+    const result = await this.authService.verifyEmail(
+      body.email,
+      otp,
+      body.password,
+    );
+
+    return { status: result ? 'success' : 'Failure', message: null };
+  }
 }
