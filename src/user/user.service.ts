@@ -61,9 +61,8 @@ export class UserService {
   findUserPhone2(tel2: string) {
     return this.userRepo.findOne({ where: { tel2 } });
   }
-
+  // UPDATED USER FUNCTION
   async update(id: number, updateUserDto: UpdateUserDto) {
-    // return `This action updates a #${id} user`;
     const user = await this.findOneById(id);
 
     if (!user) {
@@ -71,10 +70,18 @@ export class UserService {
     }
     await this.userRepo.update(id, updateUserDto);
     return await this.findOneById(user.idUser);
-    // return await this.userRepo.update(id, updateUserDto);
   }
+  // REMOVE USER FUNCTION
+  async remove(id: number) {
+    const user = await this.findOneById(id);
+    if (!user) {
+      throw new NotFoundException('USER NOT FOUND TO UPDATE THERE...');
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+    await this.userRepo.delete(id);
+
+    return {
+      message: `USER ID ${id} WAS DELETED WITH SUCCESSFULY...`,
+    };
   }
 }
