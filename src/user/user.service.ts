@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -36,10 +36,18 @@ export class UserService {
 
   // GET ONE BY ID
   async findOneById(id: number) {
-    if (!id) {
-      return `This action returns a #${id} user`;
+    // if (!id) {
+    //   return `This action returns a #${id} user is not found`;
+    // }
+    const user = await this.userRepo.findOne({ where: { idUser: id } });
+
+    if (!user) {
+      throw new NotFoundException(
+        `This action returns a #${user} user is not found`,
+      );
     }
-    return await this.userRepo.findOne({ where: { idUser: id } });
+
+    return user;
   }
   // GET USER EMAIL EXISTING
   findUserEmail(email: string) {
@@ -54,8 +62,16 @@ export class UserService {
     return this.userRepo.findOne({ where: { tel2 } });
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    // return `This action updates a #${id} user`;
+    const user = await this.findOneById(id);
+
+    if (!user) {
+      throw new NotFoundException('USER NOT FOUND TO UPDATE THERE...');
+    }
+    await this.userRepo.update(id, updateUserDto);
+    return await this.findOneById(user.idUser);
+    // return await this.userRepo.update(id, updateUserDto);
   }
 
   remove(id: number) {
