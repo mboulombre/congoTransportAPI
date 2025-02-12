@@ -56,32 +56,57 @@ export class AuthService {
       password,
       tel1,
       tel2,
+      role,
     } = authBody;
 
     // SEE IF EMAIL IS USED
-    const isEmail = await this.usersService.findUserEmail(email);
-    // SEE IF PHONE 1 IS USED
-    const isPhone1 = await this.usersService.findUserPhone1(tel1);
-    // SEE IF PHONE 2 IS USED
-    const isPhone2 = await this.usersService.findUserPhone2(tel2);
-    // IF EMAIL IS USED
-    if (isEmail) {
-      throw new BadRequestException(
-        'CET EMAIL EST DEJA UTILISE VEILLEZ EN ENTRER UN AUTRE',
-      );
-    }
+    // const isEmail = await this.usersService.findUserEmail(email);
+    // // SEE IF PHONE 1 IS USED
+    // const isPhone1 = await this.usersService.findUserPhone1(tel1);
+    // // SEE IF PHONE 2 IS USED
+    // const isPhone2 = await this.usersService.findUserPhone2(tel2);
+    // // IF EMAIL IS USED
+    // if (isEmail) {
+    //   throw new BadRequestException(
+    //     'CET EMAIL EST DEJA UTILISE VEILLEZ EN ENTRER UN AUTRE',
+    //   );
+    // }
 
-    // IF PHONE 1 IS USED
-    if (isPhone1) {
-      throw new BadRequestException(
-        'CE NUMERO DE TEL 1 EST DEJA UTILISE VEILLEZ EN ENTRER UN AUTRE',
-      );
-    }
-    // IF PHONE 2 IS USED
-    if (isPhone2) {
-      throw new BadRequestException(
-        'CE NUMERO DE TEL 2 EST DEJA UTILISE VEILLEZ EN ENTRER UN AUTRE',
-      );
+    // // IF PHONE 1 IS USED
+    // if (isPhone1) {
+    //   throw new BadRequestException(
+    //     'CE NUMERO DE TEL 1 EST DEJA UTILISE VEILLEZ EN ENTRER UN AUTRE',
+    //   );
+    // }
+    // // IF PHONE 2 IS USED
+    // if (isPhone2) {
+    //   throw new BadRequestException(
+    //     'CE NUMERO DE TEL 2 EST DEJA UTILISE VEILLEZ EN ENTRER UN AUTRE',
+    //   );
+    // }
+
+    const userExisting = await this.usersService.findUserByEmailOrPhone(
+      email,
+      tel1,
+      tel2,
+    );
+
+    if (userExisting) {
+      if (userExisting.email === email) {
+        throw new BadRequestException(
+          'Cet email est déjà utilisé, veuillez en entrer un autre.',
+        );
+      }
+      if (userExisting.tel1 === tel1) {
+        throw new BadRequestException(
+          'Ce numéro de téléphone 1 est déjà utilisé, veuillez en entrer un autre.',
+        );
+      }
+      if (userExisting.tel2 === tel2) {
+        throw new BadRequestException(
+          'Ce numéro de téléphone 2 est déjà utilisé, veuillez en entrer un autre.',
+        );
+      }
     }
 
     // // HASH PASSWORD
@@ -97,11 +122,18 @@ export class AuthService {
       adress2,
       tel1,
       tel2,
+      role,
     });
+
+    // SEND OTP CODE IN USER REGISTERED
+    this.generateEmailVerification(email);
 
     // RETURN THE USER REGISTERED
     // return user;
-    const token = this.jwtService.sign({ idUser: user.idUser });
+    const token = this.jwtService.sign({
+      idUser: user.idUser,
+      role: user.role,
+    });
 
     return { token };
   }
@@ -111,7 +143,8 @@ export class AuthService {
     email: string,
     password: string,
   ): Promise<{ access_token: string }> {
-    const user = await this.usersService.findUserEmail(email);
+    // const user = await this.usersService.findUserEmail(email);
+    const user = await this.usersService.findUserByEmailOrPhone(email, '', '');
 
     // IF CHAMPS EMPTY
     if (!email || !password) {
@@ -128,7 +161,7 @@ export class AuthService {
       throw new NotFoundException('LE PASSWORD EST INCORRECT');
     }
 
-    const payload = { sub: user.idUser, email: user.email };
+    const payload = { sub: user.idUser, email: user.email, role: user.role };
 
     return {
       access_token: await this.jwtService.signAsync(payload),
@@ -146,7 +179,8 @@ export class AuthService {
       throw new NotFoundException('CHAMPS REQUIRED...');
     }
     // FIND THE USER
-    const user = await this.usersService.findUserEmail(email);
+    // const user = await this.usersService.findUserEmail(email);
+    const user = await this.usersService.findUserByEmailOrPhone(email, '', '');
     // Log pour voir si la comparaison réussit
     if (!user) {
       throw new NotFoundException('USER NOT FOUND...');
@@ -175,7 +209,8 @@ export class AuthService {
   }
   // GENERATE EMAIL AND SEND TO EMAIL ACCOUNT
   async generateEmailVerification(email: string) {
-    const user = await this.usersService.findUserEmail(email);
+    // const user = await this.usersService.findUserEmail(email);
+    const user = await this.usersService.findUserByEmailOrPhone(email, '', '');
     if (!user) {
       throw new NotFoundException('USER NOT FOUND');
     }
@@ -192,7 +227,8 @@ export class AuthService {
   }
   // VERIFY OTP CODE
   async verifyEmail(email: string, token: string, password: string) {
-    const user = await this.usersService.findUserEmail(email);
+    // const user = await this.usersService.findUserEmail(email);
+    const user = await this.usersService.findUserByEmailOrPhone(email, '', '');
 
     if (!user) {
       throw new NotFoundException('USER NOT FOUND');
@@ -224,7 +260,8 @@ export class AuthService {
     }
 
     // FIND THE USER
-    const user = await this.usersService.findUserEmail(email);
+    // const user = await this.usersService.findUserEmail(email);
+    const user = await this.usersService.findUserByEmailOrPhone(email, '', '');
     if (!user) {
       throw new NotFoundException('USER NOT FOUND...');
     }

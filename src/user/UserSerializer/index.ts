@@ -1,3 +1,4 @@
+import { UserRole } from 'src/enum/user_role.enum';
 import { User } from '../entities/user.entity';
 
 class UserSerialized {
@@ -9,6 +10,7 @@ class UserSerialized {
   adress2: string | null;
   tel1: string;
   tel2: string | null;
+  role: UserRole;
 }
 
 export class UserSerializer {
@@ -23,6 +25,7 @@ export class UserSerializer {
     user.lastName = users.lastName;
     user.tel1 = users.tel1;
     user.tel2 = users.tel2;
+    user.role = users.role;
 
     return user;
   }

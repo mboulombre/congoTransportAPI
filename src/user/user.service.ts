@@ -49,18 +49,29 @@ export class UserService {
 
     return user;
   }
-  // GET USER EMAIL EXISTING
-  findUserEmail(email: string) {
-    return this.userRepo.findOne({ where: { email } });
+  // // GET USER EMAIL EXISTING
+  // findUserEmail(email: string) {
+  //   return this.userRepo.findOne({ where: { email } });
+  // }
+  // // GET USER PHONE EXISTING
+  // findUserPhone1(tel1: string) {
+  //   return this.userRepo.findOne({ where: { tel1 } });
+  // }
+  // // GET USER PHONE EXISTING
+  // findUserPhone2(tel2: string) {
+  //   return this.userRepo.findOne({ where: { tel2 } });
+  // }
+
+  async findUserByEmailOrPhone(
+    email: string,
+    tel1: string,
+    tel2: string,
+  ): Promise<User | null> {
+    return this.userRepo.findOne({
+      where: [{ email: email }, { tel1: tel1 }, { tel2: tel2 }],
+    });
   }
-  // GET USER PHONE EXISTING
-  findUserPhone1(tel1: string) {
-    return this.userRepo.findOne({ where: { tel1 } });
-  }
-  // GET USER PHONE EXISTING
-  findUserPhone2(tel2: string) {
-    return this.userRepo.findOne({ where: { tel2 } });
-  }
+
   // UPDATED USER FUNCTION
   async update(id: number, updateUserDto: UpdateUserDto) {
     const user = await this.findOneById(id);

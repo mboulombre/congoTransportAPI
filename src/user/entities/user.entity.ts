@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { UserRole } from 'src/enum/user_role.enum';
 
 @Entity('user')
 export class User {
@@ -23,6 +24,9 @@ export class User {
 
   @Column('varchar', { name: 'Email', unique: true, length: 45 })
   email: string;
+
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.User })
+  role: UserRole;
 
   @Column('varchar', { name: 'Password', length: 225 })
   password: string;
