@@ -1,14 +1,14 @@
-import { PartialType } from '@nestjs/mapped-types';
 import {
   IsEmail,
   IsString,
   IsNumber,
   IsNotEmpty,
   MinLength,
+  IsEnum,
 } from 'class-validator';
-import { CreateUserDto } from './create-user.dto';
+import { UserRole } from 'src/enum/user_role.enum';
 
-export class UpdateUserDto extends PartialType(CreateUserDto) {
+export class CreateAuthDto {
   @IsNotEmpty()
   @IsString({ message: 'VOUS DEVEZ FOURNIR UN PRENOM.' })
   lastName: string;
@@ -16,6 +16,20 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsNotEmpty()
   @IsString({ message: 'VOUS DEVEZ FOURNIR UN NOM.' })
   firstName: string;
+
+  @IsNotEmpty()
+  @IsEmail({}, { message: 'VOUS DEVEZ FOURNIR UN EMAIL.' })
+  email: string;
+
+  @IsEnum(UserRole)
+  role: UserRole;
+
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(6, {
+    message: 'VOTRE MOT DE PASSE DOIT FAIRE PLUS DE 6 CARACTERES.',
+  })
+  password: string;
 
   @IsNotEmpty()
   @IsString({ message: 'VOUS DEVEZ FOURNIR UNE ADRESSE.' })
