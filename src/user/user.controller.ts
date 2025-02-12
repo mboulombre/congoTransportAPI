@@ -58,6 +58,8 @@ export class UserController {
     return this.userService.findOneById(+id);
   }
 
+  @Roles(UserRole.Admin)
+  @UseGuards(AuthGuard, UserRoleGuard)
   @Patch('/update/:id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(+id, updateUserDto);
@@ -70,9 +72,8 @@ export class UserController {
   //   return 'Access granted!';
   // }
 
-  // @UseGuards(AuthGuard, UserRoleGuard)
-  // @Roles(UserRole.Admin)
-  @UseGuards(AuthGuard)
+  @Roles(UserRole.Admin)
+  @UseGuards(AuthGuard, UserRoleGuard)
   @Delete('/delete/:id')
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);

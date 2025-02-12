@@ -33,10 +33,10 @@ import { AppController } from './app.controller';
   controllers: [AppController],
   providers: [
     AppService,
-    {
-      provide: APP_GUARD,
-      useClass: UserRoleGuard,
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: UserRoleGuard,
+    // },
   ],
 })
 export class AppModule {}
