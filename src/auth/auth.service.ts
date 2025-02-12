@@ -46,6 +46,7 @@ export class AuthService {
   }
 
   // FUNCTION REGISTER USER
+  // async register(authBody: CreateAuthDto): Promise<{ message: string }> {
   async register(authBody: CreateAuthDto): Promise<{ token: string }> {
     const {
       email,
@@ -92,21 +93,9 @@ export class AuthService {
     );
 
     if (userExisting) {
-      if (userExisting.email === email) {
-        throw new BadRequestException(
-          'Cet email est déjà utilisé, veuillez en entrer un autre.',
-        );
-      }
-      if (userExisting.tel1 === tel1) {
-        throw new BadRequestException(
-          'Ce numéro de téléphone 1 est déjà utilisé, veuillez en entrer un autre.',
-        );
-      }
-      if (userExisting.tel2 === tel2) {
-        throw new BadRequestException(
-          'Ce numéro de téléphone 2 est déjà utilisé, veuillez en entrer un autre.',
-        );
-      }
+      throw new BadRequestException(
+        'Cet email ou numéro de téléphone est déjà utilisé, veuillez en entrer un autre.',
+      );
     }
 
     // // HASH PASSWORD
@@ -124,18 +113,36 @@ export class AuthService {
       tel2,
       role,
     });
-
+    // TEMPORARILY SAVE USER AND OTP CODE IN DATABASE
+    // await this.usersService.storePendingUser({
+    //   email,
+    //   adress1,
+    //   adress2,
+    //   firstName,
+    //   lastName,
+    //   password: hashedPassword,
+    //   tel1,
+    //   tel2,
+    //   role,
+    // });
     // SEND OTP CODE IN USER REGISTERED
     this.generateEmailVerification(email);
 
     // RETURN THE USER REGISTERED
     // return user;
-    const token = this.jwtService.sign({
-      idUser: user.idUser,
-      role: user.role,
-    });
+    const token = this.jwtService.sign(
+      {
+        idUser: user.idUser,
+        role: user.role,
+      },
+      { expiresIn: '7d' },
+    );
 
     return { token };
+
+    // return {
+    //   message: 'Un code de vérification a été envoyé à votre adresse e-mail.',
+    // };
   }
 
   // FUNCTION LOGIN USER
@@ -233,8 +240,8 @@ export class AuthService {
     if (!user) {
       throw new NotFoundException('USER NOT FOUND');
     }
-    console.log('user', user);
-    console.log('token', token);
+    // console.log('user', user);
+    // console.log('token', token);
     const isValid = await this.verificationTokenService.validateOtp(
       user.idUser,
       token,

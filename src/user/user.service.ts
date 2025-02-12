@@ -13,9 +13,17 @@ export class UserService {
     private readonly userRepo: Repository<User>,
   ) {}
   // CREATE USER FUNCTION
-
   async createUser(createUserDto: CreateAuthDto) {
     return await this.userRepo.save(createUserDto);
+  }
+
+  // FUNCTION PENDING REGISTER USER
+  async storePendingUser(data: Partial<User>): Promise<void> {
+    await this.userRepo.save(data);
+  }
+  // FUNCTION DELETE PENDING USER
+  async deletePendingUser(email: string): Promise<void> {
+    await this.userRepo.delete({ email });
   }
 
   // CHANGE PASSWORD FUNCTION
