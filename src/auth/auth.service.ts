@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -46,8 +47,7 @@ export class AuthService {
   }
 
   // FUNCTION REGISTER USER
-  // async register(authBody: CreateAuthDto): Promise<{ message: string }> {
-  async register(authBody: CreateAuthDto): Promise<{ token: string }> {
+  async register(authBody: CreateAuthDto): Promise<{ message: string }> {
     const {
       email,
       adress1,
@@ -59,32 +59,6 @@ export class AuthService {
       tel2,
       role,
     } = authBody;
-
-    // SEE IF EMAIL IS USED
-    // const isEmail = await this.usersService.findUserEmail(email);
-    // // SEE IF PHONE 1 IS USED
-    // const isPhone1 = await this.usersService.findUserPhone1(tel1);
-    // // SEE IF PHONE 2 IS USED
-    // const isPhone2 = await this.usersService.findUserPhone2(tel2);
-    // // IF EMAIL IS USED
-    // if (isEmail) {
-    //   throw new BadRequestException(
-    //     'CET EMAIL EST DEJA UTILISE VEILLEZ EN ENTRER UN AUTRE',
-    //   );
-    // }
-
-    // // IF PHONE 1 IS USED
-    // if (isPhone1) {
-    //   throw new BadRequestException(
-    //     'CE NUMERO DE TEL 1 EST DEJA UTILISE VEILLEZ EN ENTRER UN AUTRE',
-    //   );
-    // }
-    // // IF PHONE 2 IS USED
-    // if (isPhone2) {
-    //   throw new BadRequestException(
-    //     'CE NUMERO DE TEL 2 EST DEJA UTILISE VEILLEZ EN ENTRER UN AUTRE',
-    //   );
-    // }
 
     const userExisting = await this.usersService.findUserByEmailOrPhone(
       email,
@@ -102,7 +76,7 @@ export class AuthService {
     const hashedPassword = await this.hashPassword({ password });
 
     // CREATE A NEW USER AND SAVE IT
-    const user = await this.usersService.createUser({
+    await this.usersService.createUser({
       email,
       password: hashedPassword,
       firstName,
@@ -112,37 +86,15 @@ export class AuthService {
       tel1,
       tel2,
       role,
+      isVerified: false,
     });
-    // TEMPORARILY SAVE USER AND OTP CODE IN DATABASE
-    // await this.usersService.storePendingUser({
-    //   email,
-    //   adress1,
-    //   adress2,
-    //   firstName,
-    //   lastName,
-    //   password: hashedPassword,
-    //   tel1,
-    //   tel2,
-    //   role,
-    // });
+
     // SEND OTP CODE IN USER REGISTERED
     this.generateEmailVerification(email);
 
-    // RETURN THE USER REGISTERED
-    // return user;
-    const token = this.jwtService.sign(
-      {
-        idUser: user.idUser,
-        role: user.role,
-      },
-      { expiresIn: '7d' },
-    );
-
-    return { token };
-
-    // return {
-    //   message: 'Un code de vérification a été envoyé à votre adresse e-mail.',
-    // };
+    return {
+      message: 'Un code de vérification a été envoyé à votre adresse e-mail.',
+    };
   }
 
   // FUNCTION LOGIN USER
@@ -150,7 +102,6 @@ export class AuthService {
     email: string,
     password: string,
   ): Promise<{ access_token: string }> {
-    // const user = await this.usersService.findUserEmail(email);
     const user = await this.usersService.findUserByEmailOrPhone(email, '', '');
 
     // IF CHAMPS EMPTY
@@ -161,6 +112,14 @@ export class AuthService {
     if (!user) {
       throw new NotFoundException('UTILISATEUR NON TROUVER');
     }
+
+    // VERIFIED IF USER ACCOUNT IS ACTIF
+    if (!user.isVerified) {
+      throw new ForbiddenException(
+        "VOTRE COMPTE N'EST PAS ENCORE ACTIVÉ. VEUILLEZ VÉRIFIER VOTRE EMAIL AVEC LE CODE OTP.",
+      );
+    }
+
     const isPasswordValid = await compare(password, user.password);
 
     // IF PASSWORD INCORRECT
@@ -186,7 +145,6 @@ export class AuthService {
       throw new NotFoundException('CHAMPS REQUIRED...');
     }
     // FIND THE USER
-    // const user = await this.usersService.findUserEmail(email);
     const user = await this.usersService.findUserByEmailOrPhone(email, '', '');
     // Log pour voir si la comparaison réussit
     if (!user) {
@@ -216,7 +174,6 @@ export class AuthService {
   }
   // GENERATE EMAIL AND SEND TO EMAIL ACCOUNT
   async generateEmailVerification(email: string) {
-    // const user = await this.usersService.findUserEmail(email);
     const user = await this.usersService.findUserByEmailOrPhone(email, '', '');
     if (!user) {
       throw new NotFoundException('USER NOT FOUND');
@@ -233,15 +190,13 @@ export class AuthService {
     });
   }
   // VERIFY OTP CODE
-  async verifyEmail(email: string, token: string, password: string) {
-    // const user = await this.usersService.findUserEmail(email);
+  async verifyEmail(email: string, token: string) {
     const user = await this.usersService.findUserByEmailOrPhone(email, '', '');
 
     if (!user) {
       throw new NotFoundException('USER NOT FOUND');
     }
-    // console.log('user', user);
-    // console.log('token', token);
+
     const isValid = await this.verificationTokenService.validateOtp(
       user.idUser,
       token,
@@ -251,11 +206,20 @@ export class AuthService {
       throw new UnprocessableEntityException('INVALID OR EXPIRED OTP');
     }
 
-    user.password = await this.hashPassword({ password });
+    user.isVerified = true;
 
-    const userRepo = this.usersService.createUser(user);
+    const userRepo = await this.usersService.createUser(user);
 
-    return userRepo;
+    // GENERATE A TOKEN
+    const generateTtoken = this.jwtService.sign(
+      {
+        idUser: userRepo.idUser,
+        role: userRepo.role,
+      },
+      { expiresIn: '7d' },
+    );
+
+    return { token: generateTtoken, user: userRepo };
   }
 
   // FUNCTION RESET PASSWORD
@@ -267,7 +231,6 @@ export class AuthService {
     }
 
     // FIND THE USER
-    // const user = await this.usersService.findUserEmail(email);
     const user = await this.usersService.findUserByEmailOrPhone(email, '', '');
     if (!user) {
       throw new NotFoundException('USER NOT FOUND...');

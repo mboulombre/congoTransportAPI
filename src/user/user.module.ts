@@ -7,9 +7,10 @@ import { AuthService } from 'src/auth/auth.service';
 import { VerificationService } from 'src/verification/verification.service';
 import { MessageService } from 'src/message/message.service';
 import { VerificationModule } from 'src/verification/verification.module';
+import { PendingUser } from 'src/auth/entities/pending.auth.user';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), VerificationModule],
+  imports: [TypeOrmModule.forFeature([User, PendingUser]), VerificationModule],
   controllers: [UserController],
   providers: [UserService, AuthService, MessageService],
   exports: [UserService],
