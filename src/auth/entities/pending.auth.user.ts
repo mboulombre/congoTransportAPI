@@ -3,15 +3,13 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
-  Index,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { UserRole } from 'src/enum/user_role.enum';
 
 @Entity('user')
-export class User {
+export class PendingUser {
   @Column('int', { primary: true, name: 'idUser' })
   @PrimaryGeneratedColumn()
   idUser: number;
@@ -54,7 +52,4 @@ export class User {
 
   @DeleteDateColumn()
   deletedAt: Date;
-
-  // @OneToMany(() => Booking, (booking) => booking.user)
-  // bookings: Booking[];
 }

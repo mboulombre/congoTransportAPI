@@ -45,21 +45,17 @@ export class AuthController {
     );
   }
 
-  @Post('verify-otp')
+  @Post('send-otp')
   async generateEmailVerification(@Body() body: { email: string }) {
     return await this.authService.generateEmailVerification(body.email);
   }
 
-  @Post('verify/:otp')
+  @Post('verify-otp/:otp')
   async verifyEmail(
     @Param('otp') otp: string,
-    @Body() body: { email: string; password: string },
+    @Body() body: { email: string },
   ) {
-    const result = await this.authService.verifyEmail(
-      body.email,
-      otp,
-      body.password,
-    );
+    const result = await this.authService.verifyEmail(body.email, otp);
 
     return { status: result ? 'success' : 'Failure', message: null };
   }

@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   MinLength,
   IsEnum,
+  IsBoolean,
 } from 'class-validator';
 import { UserRole } from 'src/enum/user_role.enum';
 
@@ -23,6 +24,10 @@ export class CreateAuthDto {
 
   @IsEnum(UserRole)
   role: UserRole;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  isVerified: boolean;
 
   @IsNotEmpty()
   @IsString()

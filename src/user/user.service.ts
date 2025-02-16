@@ -1,16 +1,24 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateAuthDto } from 'src/auth/dto/create-auth.dto';
+import { PendingUser } from 'src/auth/entities/pending.auth.user';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+
+    @InjectRepository(PendingUser)
+    private readonly userPendingRepo: Repository<PendingUser>,
   ) {}
   // CREATE USER FUNCTION
   async createUser(createUserDto: CreateAuthDto) {
@@ -19,11 +27,11 @@ export class UserService {
 
   // FUNCTION PENDING REGISTER USER
   async storePendingUser(data: Partial<User>): Promise<void> {
-    await this.userRepo.save(data);
+    await this.userPendingRepo.save(data);
   }
   // FUNCTION DELETE PENDING USER
   async deletePendingUser(email: string): Promise<void> {
-    await this.userRepo.delete({ email });
+    await this.userPendingRepo.delete({ email });
   }
 
   // CHANGE PASSWORD FUNCTION
@@ -87,6 +95,12 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('USER NOT FOUND TO UPDATE THERE...');
     }
+    // VERIFIED IF USER ACCOUNT IS ACTIF
+    if (!user.isVerified) {
+      throw new ForbiddenException(
+        "VOTRE COMPTE N'EST PAS ENCORE ACTIVÉ. VOUS NE POUVEZ MODIFIER CE COMPTE.",
+      );
+    }
     await this.userRepo.update(id, updateUserDto);
     return await this.findOneById(user.idUser);
   }
@@ -95,6 +109,13 @@ export class UserService {
     const user = await this.findOneById(id);
     if (!user) {
       throw new NotFoundException('USER NOT FOUND TO UPDATE THERE...');
+    }
+
+    // VERIFIED IF USER ACCOUNT IS ACTIF
+    if (!user.isVerified) {
+      throw new ForbiddenException(
+        "VOTRE COMPTE N'EST PAS ENCORE ACTIVÉ. VOUS NE POUVEZ SUPPRIMER CE COMPTE.",
+      );
     }
 
     await this.userRepo.delete(id);
