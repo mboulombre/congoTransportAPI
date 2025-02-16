@@ -6,16 +6,14 @@ import {
   UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { hash, compare, genSalt } from 'bcrypt';
-// import * as bcrypt from 'bcrypt';
+import { hash, compare } from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import { UserService } from 'src/user/user.service';
 import { VerificationService } from 'src/verification/verification.service';
 import { MessageService } from 'src/message/message.service';
-import { ChangePasswordDto } from './dto/change-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -68,7 +66,7 @@ export class AuthService {
 
     if (userExisting) {
       throw new BadRequestException(
-        'Cet email ou numéro de téléphone est déjà utilisé, veuillez en entrer un autre.',
+        'Cet email ou numéro de téléphone 1 ou 2 est déjà utilisé, veuillez en entrer un autre.',
       );
     }
 
@@ -146,13 +144,12 @@ export class AuthService {
     }
     // FIND THE USER
     const user = await this.usersService.findUserByEmailOrPhone(email, '', '');
-    // Log pour voir si la comparaison réussit
+
     if (!user) {
       throw new NotFoundException('USER NOT FOUND...');
     }
 
     // COMPARE THE OLD PASSWORD WITH THE PASSWORD IN DB
-
     const passwordMatch = await this.isPasswordValid({
       password: oldPassword,
       hashedPassword: user.password,
@@ -223,11 +220,19 @@ export class AuthService {
   }
 
   // FUNCTION RESET PASSWORD
-  async resetPassword(resetPasswordDto: ChangePasswordDto) {
-    const { email, newPassword, oldPassword } = resetPasswordDto;
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const { email, newPassword, confirmPassword } = resetPasswordDto;
+
     // VERIFY IF CHAMP IS EMPTY
-    if (!email || !oldPassword || !newPassword) {
+    if (!email || !confirmPassword || !newPassword) {
       throw new NotFoundException('CHAMPS REQUIRED...');
+    }
+
+    // VERIFY IF CHAMP IS EMPTY
+    if (newPassword !== confirmPassword) {
+      throw new NotFoundException(
+        `${newPassword} AND ${confirmPassword} CANNOT THE SAME`,
+      );
     }
 
     // FIND THE USER
@@ -236,21 +241,11 @@ export class AuthService {
       throw new NotFoundException('USER NOT FOUND...');
     }
 
-    // COMPARE THE OLD PASSWORD WITH THE PASSWORD IN DB
-    const passwordMatch = await this.isPasswordValid({
-      password: oldPassword,
-      hashedPassword: user.password,
-    });
-
-    if (!passwordMatch) {
-      throw new UnauthorizedException('WRONG CREDENTIALS');
-    }
-
     // RESET USER PASSWORD
     user.password = await this.hashPassword({ password: newPassword });
 
     // RESET PASSWORD
-    this.usersService.changePassword(user.idUser, user);
+    this.usersService.resetPassword(user.idUser, user);
 
     return {
       message: 'PASSWORD RESET WITH SUCCESSFULY...',

@@ -18,6 +18,7 @@ import { AuthUserDto } from './dto/auth-user.dto';
 import { Public } from './decorators/public.decorator';
 import { AuthGuard } from './guard/auth.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -62,7 +63,7 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Put('/reset-password')
-  async resetPassword(@Body() resetPasswordDto: ChangePasswordDto) {
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
   }
 }
