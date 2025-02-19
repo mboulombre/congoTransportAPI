@@ -42,12 +42,8 @@ export class UserController {
   // GET USER INFORMATION
   @UseGuards(AuthGuard)
   @Get('/profile')
-  // async getProfile(@CurrentUser() user: User) {
-  //   return user;
-  // }
   async getProfile(@Request() req: any) {
     return UserSerializer.serialize(
-      // await this.userService.findUserEmail(req.user.email),
       await this.userService.findUserByEmailOrPhone(
         req.user.email,
         req.user.tel1,
@@ -57,35 +53,27 @@ export class UserController {
   }
 
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  async findAll() {
+    return await this.userService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    // return this.userService.findOne(+id);
-    return this.userService.findOneById(+id);
+  async findOne(@Param('id') id: string) {
+    return await this.userService.findOneById(+id);
   }
 
   @Roles(UserRole.Admin)
   @UseGuards(AuthGuard, UserRoleGuard)
   @Patch('/update/:id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
+  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return await this.userService.update(+id, updateUserDto);
   }
-
-  //   @UseGuards(JwtAuthGuard, UserRoleGuard)
-  // @Roles(UserRole.ADMIN) // Exemple d'utilisation du décorateur
-  // @Get('protected-route')
-  // async getProtectedResource() {
-  //   return 'Access granted!';
-  // }
 
   @Roles(UserRole.Admin)
   @UseGuards(AuthGuard, UserRoleGuard)
   @Delete('/delete/:id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  async remove(@Param('id') id: string) {
+    return await this.userService.remove(+id);
   }
 
   @UseGuards(AuthGuard)
