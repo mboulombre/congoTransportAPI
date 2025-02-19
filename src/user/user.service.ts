@@ -100,7 +100,7 @@ export class UserService {
       message: `USER ID ${id} WAS DELETED WITH SUCCESSFULY...`,
     };
   }
-
+  // UPLOAD USER IMAGE
   async updateUserImage(userId: number, imageUrl: string) {
     await this.userRepo.update(userId, { userImage: imageUrl });
 
