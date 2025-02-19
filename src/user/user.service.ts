@@ -100,4 +100,10 @@ export class UserService {
       message: `USER ID ${id} WAS DELETED WITH SUCCESSFULY...`,
     };
   }
+
+  async updateUserImage(userId: number, imageUrl: string) {
+    await this.userRepo.update(userId, { userImage: imageUrl });
+
+    await this.userRepo.findOne({ where: { idUser: userId } });
+  }
 }
