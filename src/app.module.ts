@@ -11,6 +11,7 @@ import { MessageModule } from './message/message.module';
 import { VerificationModule } from './verification/verification.module';
 import { AppService } from './app.service';
 import { AppController } from './app.controller';
+import { CloudinaryConfig } from './cloudinary/cloudinary.config';
 
 @Module({
   imports: [
@@ -33,10 +34,12 @@ import { AppController } from './app.controller';
   controllers: [AppController],
   providers: [
     AppService,
+    CloudinaryConfig,
     // {
     //   provide: APP_GUARD,
     //   useClass: UserRoleGuard,
     // },
   ],
+  exports: [CloudinaryConfig],
 })
 export class AppModule {}

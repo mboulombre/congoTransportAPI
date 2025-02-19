@@ -55,6 +55,9 @@ export class User {
   @DeleteDateColumn()
   deletedAt: Date;
 
+  @Column({ nullable: true })
+  userImage: string;
+
   // @OneToMany(() => Booking, (booking) => booking.user)
   // bookings: Booking[];
 }
